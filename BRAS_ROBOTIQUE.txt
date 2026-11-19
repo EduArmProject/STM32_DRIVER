@@ -1,0 +1,120 @@
+Configuration	BRAS_ROBOTIQUE
+STM32CubeMX 	6.18.1
+Date	11/09/2026
+MCU	STM32G431CBTx
+
+
+
+PERIPHERALS	MODES	FUNCTIONS	PINS
+FDCAN1	Activated	FDCAN1_RX	PA11
+FDCAN1	Activated	FDCAN1_TX	PA12
+RCC	Crystal/Ceramic Resonator	RCC_OSC_IN	PF0-OSC_IN
+RCC	Crystal/Ceramic Resonator	RCC_OSC_OUT	PF1-OSC_OUT
+SPI1	Full-Duplex Master	SPI1_MISO	PA6
+SPI1	Full-Duplex Master	SPI1_MOSI	PA7
+SPI1	Full-Duplex Master	SPI1_SCK	PA5
+SYS	Trace Asynchronous Sw	SYS_JTMS-SWDIO	PA13
+SYS	Trace Asynchronous Sw	SYS_JTCK-SWCLK	PA14
+SYS	Trace Asynchronous Sw	SYS_JTDO-SWO	PB3
+SYS	SysTick	SYS_VS_Systick	VP_SYS_VS_Systick
+SYS	Dead Battery Signals disabled	SYS_VS_DBSignals	VP_SYS_VS_DBSignals
+TIM1	Internal Clock	TIM1_VS_ClockSourceINT	VP_TIM1_VS_ClockSourceINT
+TIM1	PWM Generation CH2	TIM1_CH2	PA9
+USART3	Single Wire (Half-Duplex)	USART3_TX	PB10
+
+
+
+Pin Nb	PINs	FUNCTIONs	LABELs
+5	PF0-OSC_IN	RCC_OSC_IN	
+6	PF1-OSC_OUT	RCC_OSC_OUT	
+9	PA1	GPIO_Output	SPI_CS
+10	PA2	GPIO_Output	FLASH_CS
+13	PA5	SPI1_SCK	SPI_CLK
+14	PA6	SPI1_MISO	SPI_MISO
+15	PA7	SPI1_MOSI	SPI_MOSI
+22	PB10	USART3_TX	MOTOR_UART
+25	PB11	GPIO_Output	LED_GREEN
+26	PB12	GPIO_EXTI12	DIP3
+27	PB13	GPIO_Output	LED_BLUE
+28	PB14	GPIO_EXTI14	MOTOR_DIAG
+29	PB15	GPIO_Output	MOTOR_DIR
+30	PA8	GPIO_Output	MOTOR_EN
+31	PA9	TIM1_CH2	MOTOR_STEP
+33	PA11	FDCAN1_RX	CAN_RX
+34	PA12	FDCAN1_TX	CAN_TX
+37	PA13	SYS_JTMS-SWDIO	SWDIO
+38	PA14	SYS_JTCK-SWCLK	SWCLK
+39	PA15	GPIO_Input	DIP2
+40	PB3	SYS_JTDO-SWO	SWO
+41	PB4	GPIO_Input	DIP1
+45	PB8-BOOT0	GPIO_Input	
+PERIPHERALS	MODES	FUNCTIONS	PINS
+FDCAN1	Activated	FDCAN1_RX	PA11
+FDCAN1	Activated	FDCAN1_TX	PA12
+RCC	Crystal/Ceramic Resonator	RCC_OSC_IN	PF0-OSC_IN
+RCC	Crystal/Ceramic Resonator	RCC_OSC_OUT	PF1-OSC_OUT
+SPI1	Full-Duplex Master	SPI1_MISO	PA6
+SPI1	Full-Duplex Master	SPI1_MOSI	PA7
+SPI1	Full-Duplex Master	SPI1_SCK	PA5
+SYS	Trace Asynchronous Sw	SYS_JTMS-SWDIO	PA13
+SYS	Trace Asynchronous Sw	SYS_JTCK-SWCLK	PA14
+SYS	Trace Asynchronous Sw	SYS_JTDO-SWO	PB3
+SYS	SysTick	SYS_VS_Systick	VP_SYS_VS_Systick
+SYS	Dead Battery Signals disabled	SYS_VS_DBSignals	VP_SYS_VS_DBSignals
+TIM1	Internal Clock	TIM1_VS_ClockSourceINT	VP_TIM1_VS_ClockSourceINT
+TIM1	PWM Generation CH2	TIM1_CH2	PA9
+USART3	Single Wire (Half-Duplex)	USART3_TX	PB10
+
+
+
+Pin Nb	PINs	FUNCTIONs	LABELs
+5	PF0-OSC_IN	RCC_OSC_IN	
+6	PF1-OSC_OUT	RCC_OSC_OUT	
+9	PA1	GPIO_Output	SPI_CS
+10	PA2	GPIO_Output	FLASH_CS
+13	PA5	SPI1_SCK	SPI_CLK
+14	PA6	SPI1_MISO	SPI_MISO
+15	PA7	SPI1_MOSI	SPI_MOSI
+22	PB10	USART3_TX	MOTOR_UART
+25	PB11	GPIO_Output	LED_GREEN
+26	PB12	GPIO_EXTI12	DIP3
+27	PB13	GPIO_Output	LED_BLUE
+28	PB14	GPIO_EXTI14	MOTOR_DIAG
+29	PB15	GPIO_Output	MOTOR_DIR
+30	PA8	GPIO_Output	MOTOR_EN
+31	PA9	TIM1_CH2	MOTOR_STEP
+33	PA11	FDCAN1_RX	CAN_RX
+34	PA12	FDCAN1_TX	CAN_TX
+37	PA13	SYS_JTMS-SWDIO	SWDIO
+38	PA14	SYS_JTCK-SWCLK	SWCLK
+39	PA15	GPIO_Input	DIP2
+40	PB3	SYS_JTDO-SWO	SWO
+41	PB4	GPIO_Input	DIP1
+45	PB8-BOOT0	GPIO_Input	
+
+
+
+SOFTWARE PROJECT
+
+Project Settings : 
+Project Name : BRAS_ROBOTIQUE
+Project Folder : C:\Users\ckerv\OneDrive - Efrei\EFREI\M2\PROJET_TRANSVERSE\BRAS_STM32
+Toolchain / IDE : STM32CubeIDE
+Firmware Package Name and Version : STM32Cube FW_G4 V1.6.3
+
+
+Code Generation Settings : 
+STM32Cube MCU packages and embedded software packs : Copy only the necessary library files
+Generate peripheral initialization as a pair of '.c/.h' files per peripheral : Yes
+Backup previously generated files when re-generating : No
+Delete previously generated files when not re-generated : Yes
+Set all free pins as analog (to optimize the power consumption) : Yes
+
+
+Toolchains Settings : 
+Compiler Optimizations : 
+
+
+
+
+
