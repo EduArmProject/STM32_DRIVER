@@ -52,12 +52,24 @@ typedef struct {
     uint8_t      agc_value;   // 0 to 255 (Automatic Gain Control)
     bool         mag_too_high;
     bool         mag_too_low;
-} AS5047P_t;
+} AS5047_t;
 
 
 
-void AS5047P_Init(AS5047P_t *encoder, SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port, uint16_t cs_pin);
-bool AS5047P_UpdateAngle(AS5047P_t *encoder);
-bool AS5047P_Diagnostic(AS5047P_t *encoder);
+void AS5047P_Init(AS5047_t *encoder, SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port, uint16_t cs_pin);
+
+
+bool AS5047P_Diagnostic(AS5047_t *encoder);
+uint16_t AS5047P_Read_Magnitude(AS5047_t *encoder);
+uint16_t AS5047P_Clear_Error(AS5047_t *encoder);
+
+
+bool AS5047P_Read_Angle(AS5047_t *encoder);
+void     AS5047P_Update_MultiTurn(AS5047_t *encoder);
+
+// Homing
+void     AS5047P_Set_Zero(AS5047_t *encoder); 
+void     AS5047P_Set_Zero_Offset(AS5047_t *encoder, uint16_t raw_offset);
+
 
 #endif

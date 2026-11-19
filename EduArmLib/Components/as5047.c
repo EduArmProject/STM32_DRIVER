@@ -5,7 +5,7 @@
 //  hspi1.Init.CLKPhase = SPI_PHASE_2EDGE;
 //  HAL_SPI_Init(hspi);
 
-void AS5047P_Init(AS5047P_t *encoder, SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port, uint16_t cs_pin){
+void AS5047P_Init(AS5047_t *encoder, SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port, uint16_t cs_pin){
     
     encoder->spi_interface.hspi = hspi;
     encoder->spi_interface.cs_port = cs_port;
@@ -26,7 +26,7 @@ void AS5047P_Init(AS5047P_t *encoder, SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_
 // Calculate 
 
 // send the 16 bits with 14 of data MSB first
-bool AS5047P_UpdateAngle(AS5047P_t *encoder) {
+bool AS5047P_UpdateAngle(AS5047_t *encoder) {
     // send the request
     SPI_Transmit_16b(&encoder->spi_interface, AS5047P_CMD_READ_ANGLE);
    
@@ -47,7 +47,10 @@ bool AS5047P_UpdateAngle(AS5047P_t *encoder) {
     return true;
 }
 
-bool AS5047P_Diagnostic(AS5047P_t *encoder) {
+bool AS5047P_Read_Angle(AS5047_t *encoder){}
+
+
+bool AS5047P_Diagnostic(AS5047_t *encoder) {
     SPI_Transmit_16b(&encoder->spi_interface, AS5047P_CMD_READ_DIAG);
     
     uint16_t response = SPI_Transmit_16b(&encoder->spi_interface, AS5047P_CMD_READ_NOP);
