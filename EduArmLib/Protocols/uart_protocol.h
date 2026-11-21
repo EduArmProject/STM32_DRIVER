@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-/* Configuration on STM32cubemx 
+/* Configuration on STM32cubemx
 
 "Connectivity" -> USART
 - Mode :  Single Wire (Half-Duplex) 
@@ -23,7 +23,7 @@ typedef struct {
 
 
 // Functions for UART Half-Duplex
-void UART_HD_Transmit(UART_Device_t *device, uint8_t *tx_data, uint16_t Size);
-bool UART_HD_Receive(UART_Device_t *device, uint8_t *rx_data, uint16_t Size, uint32_t Timeout);
+HAL_StatusTypeDef UART_HD_Transmit(UART_Device_t *device, uint8_t *tx_data, uint16_t Size);
+HAL_StatusTypeDef UART_HD_Receive(UART_Device_t *device, uint8_t *rx_data, uint16_t Size, uint32_t Timeout);
 
 #endif 

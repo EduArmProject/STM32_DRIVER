@@ -1,14 +1,16 @@
 #include "tmc2209.h"
 
 
-/* CRC8 calculation as specified in the TMC2209 datasheet (section 4.1.4) */
+/* CRC8 calculation as specified in the TMC2209 datasheet (section 4.2)
+ * CRC = (CRC << 1) OR (CRC.7 XOR CRC.1 XOR CRC.0 XOR [new incoming bit])
+ */
 static uint8_t TMC2209_CRC8(uint8_t *data, uint8_t len) {
     uint8_t crc = 0;
     for (uint8_t i = 0; i < len; i++) {
         uint8_t byte = data[i];
         for (uint8_t j = 0; j < 8; j++) {
             if ((crc >> 7) ^ (byte & 0x01)) {
-                crc = (crc << 1) ^ 0x07;
+                crc = (crc << 1) ^ 0x07; // XOR operation
             } else {
                 crc <<= 1;
             }
@@ -40,6 +42,58 @@ void TMC2209_WriteRegister(TMC2209_t *driver, uint8_t reg, uint32_t value) {
     UART_HD_Transmit(&driver->uart_interface, datagram, 8);
 }
 
+/* Send a request to read TCM2209 register */
+void TMC2209_ReadRegister_Request(TMC2209_t *driver, uint8_t reg) {
+    uint8_t datagram[4];
+    datagram[0] = 0x05;
+    datagram[1] = driver->node_address;
+    datagram[2] = reg & 0x7F;                 // Register address + read bit
+    datagram[3] = TMC2209_CRC8(datagram, 3);
+
+    HAL_StatusTypeDef status = UART_HD_Transmit(&driver->uart_interface, datagram, sizeof(datagram));
+    if (status != HAL_OK) {
+        return;
+    }
+}
+
+/* Received the reply for the request sent by TMC2209_ReadRegister_Request */
+void TMC2209_ReadRegister_Reply(TMC2209_t *driver, uint8_t value[4]) {
+    uint8_t reply[8];
+    HAL_StatusTypeDef status = UART_HD_Receive(&driver->uart_interface, reply, sizeof(reply), 10);
+    if (status != HAL_OK) {
+    	return;
+    }
+
+    if (reply[7] != TMC2209_CRC8(reply, 7)) {
+    	return;
+    }
+
+    value[0] = reply[3];
+    value[1] = reply[4];
+    value[2] = reply[5];
+    value[3] = reply[6];
+}
+
+/* Check the value of a register using tow functions :
+ *  -TMC2209_ReadRegister_Request
+ *  -TMC2209_ReadRegister_Reply
+ * Save the value of the register in value[4]non
+ */
+void TMC2209_ReadRegister(TMC2209_t *driver, uint8_t reg, uint8_t value[4]) {
+
+    TMC2209_ReadRegister_Request(driver, reg);
+
+    TMC2209_ReadRegister_Reply(driver, value);
+}
+
+bool TMC2209_Check_UART(TMC2209_t *driver) {
+    uint8_t value[4];
+    TMC2209_ReadRegister(driver, TMC2209_REG_ION, value);
+
+    if (value[0] == 0x21) // Version must be equal to 0x21, so we can check uart
+        return true;
+    return false;
+}
 
 bool TMC2209_Configure(
     TMC2209_t *driver,
@@ -150,6 +204,8 @@ void TMC2209_Init(
     HAL_GPIO_WritePin(driver->enn_port, driver->enn_pin, GPIO_PIN_SET);
 
     TMC2209_Configure(driver, false, true, false, 16, 8);
+
+    tmc2209_driver = driver;
 }
 
 
@@ -169,3 +225,56 @@ void TMC2209_Disable(TMC2209_t *driver) {
 void TMC2209_Stop(TMC2209_t *driver) {
     HAL_TIM_PWM_Stop(driver->step_timer, driver->step_channel);
 }
+
+/* Set direction for the motor
+- 1 forward
+- -1 backward
+*/
+void TMC2209_Set_Direction(TMC2209_t *driver, int8_t dir) {
+    if (dir == 1) {
+        HAL_GPIO_WritePin(driver->dir_port, driver->dir_pin, GPIO_PIN_SET);
+    } else if (dir == -1) {
+        HAL_GPIO_WritePin(driver->dir_port, driver->dir_pin, GPIO_PIN_RESET);
+    } else {
+        return;
+    }
+}
+
+void TMC2209_Set_Step(TMC2209_t *driver, uint32_t steps) {
+
+    if (steps == NULL)
+        return;
+
+    if (driver->is_enabled == false)
+        TMC2209_Enable(driver);
+
+    if (driver->step_remaining > 0)
+        return;
+
+    driver->step_remaining = steps;
+
+    // Interuption to every pulse completed
+    HAL_TIM_PWM_Start_IT(driver->step_timer, driver->step_channel);
+}
+
+/* Callback in non blocking modes - Interrupt */
+void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim) {
+    TMC2209_t *driver = tmc2209_driver;
+
+    driver->step_remaining--;
+
+    if (driver->step_remaining == 0) {
+        HAL_TIM_PWM_Stop_IT(htim, driver->step_channel);
+    }
+}
+
+void TMC2209_Set_Speed(TMC2209_t *driver, uint32_t frequence_impulsion) {
+    
+}
+
+bool TMC2209_Is_Mooving(TMC2209_t *driver) {
+    if (driver->step_remaining > 0)
+        return true;
+    return false;
+}
+

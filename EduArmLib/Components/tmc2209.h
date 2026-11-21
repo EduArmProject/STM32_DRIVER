@@ -49,28 +49,32 @@ CH Polarity                                      : High
 
 // Register map
 #define TMC2209_REG_GCONF      0x00 // Global configuration
+#define TMC2209_REG_ION        0x06 // Reads the state of all input pins available, we can check if the uart works
 #define TMC2209_REG_IHOLD_IRUN 0x10 // Driver current control (IHOLD / IRUN / IHOLDDELAY)
 #define TMC2209_REG_TPOWERDOWN 0x11 // Powerdown delay (reset default = 20)
 #define TMC2209_REG_CHOPCONF   0x6C // Chopper and driver configuration
 
+#define GEAR_REDUCER 1
+
+
 typedef struct {
-    UART_Device_t  uart_interface;
-    uint8_t        node_address; 
-
-    GPIO_TypeDef* enn_port;
-    uint16_t       enn_pin;
-    GPIO_TypeDef* dir_port;
-    uint16_t       dir_pin;
-
+    UART_Device_t      uart_interface;
+    uint8_t            node_address; 
+    GPIO_TypeDef*      enn_port;
+    uint16_t           enn_pin;
+    GPIO_TypeDef*      dir_port;
+    uint16_t           dir_pin;
     TIM_HandleTypeDef* step_timer;
     uint32_t           step_channel;
-
-    bool           is_enabled;
-    uint8_t        run_current;  
-    uint8_t        hold_current;
-    bool           error_flag;
-    bool           overtemp_warning;
+    volatile uint32_t  step_remaining; // can change at any time with the interupt, so the variable is volatile
+    bool               is_enabled;
+    uint8_t            run_current;  
+    uint8_t            hold_current;
+    bool               error_flag;
+    bool               overtemp_warning;
 } TMC2209_t;
+
+static TMC2209_t *tmc2209_driver = NULL;
 
 
 void TMC2209_Init(TMC2209_t *driver, UART_HandleTypeDef *huart, uint8_t address, 
@@ -87,9 +91,20 @@ bool TMC2209_Configure(
     uint8_t hold_current  // 0...31 (0=1/32 ... 31=32/32)
 );
 
+bool TMC2209_Check_UART(TMC2209_t *driver);
+bool TMC2209_Is_Mooving(TMC2209_t *driver);
+
+// R&W with uart com
 void TMC2209_WriteRegister(TMC2209_t *driver, uint8_t reg, uint32_t value);
+void TMC2209_ReadRegister_Request(TMC2209_t *driver, uint8_t reg);
+void TMC2209_ReadRegister_Reply(TMC2209_t *driver, uint8_t value[4]);
+void TMC2209_ReadRegister(TMC2209_t *driver, uint8_t reg, uint8_t value[4]);
+
 void TMC2209_Enable(TMC2209_t *driver);
 void TMC2209_Disable(TMC2209_t *driver);
 void TMC2209_Stop(TMC2209_t *driver);
+
+void TMC2209_Set_Direction(TMC2209_t *driver, int8_t dir);
+void TMC2209_Set_Step(TMC2209_t *driver, uint32_t steps);
 
 #endif // TMC2209_H
