@@ -1,3 +1,16 @@
+/**
+  ******************************************************************************
+  * @file    uart_protocol.h
+  * @author  Samuel_D / Corentin_K
+  * @brief   This file contains all the functions prototypes for uart protocols
+  ******************************************************************************
+  * @attention
+  *
+  * Open-source EduArm
+  *
+  ******************************************************************************
+  */
+
 #ifndef UART_PROTOCOL_H
 #define UART_PROTOCOL_H
 

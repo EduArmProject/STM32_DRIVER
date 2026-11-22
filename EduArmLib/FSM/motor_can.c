@@ -2,7 +2,7 @@
 #include "motor_can.h"
 #include "fdcan.h"
 #include "canfd_protocol.h"
-
+#include "board_io.h"
 /* Global variable definitions */
 uint32_t              motor_add      = 0;
 bool                  error_detected = false;
@@ -13,19 +13,6 @@ uint8_t               RxData[64];
 FDCAN_TxHeaderTypeDef TxHeader;
 uint8_t               TxData[8];
 
-
-/* Read DIP switches to get the motor CAN address */
-uint8_t Read_DIP_Switches(void) {
-    uint8_t dip1 = HAL_GPIO_ReadPin(DIP1_GPIO_Port, DIP1_Pin);
-    uint8_t dip2 = HAL_GPIO_ReadPin(DIP2_GPIO_Port, DIP2_Pin);
-    uint8_t dip3 = HAL_GPIO_ReadPin(DIP3_GPIO_Port, DIP3_Pin);
-
-    uint8_t address = (!dip1 << 0) |
-                      (!dip2 << 1) |
-                      (!dip3 << 2);
-
-    return address;
-}
 
 uint8_t Fetch_Motor_Address(void) {
     uint8_t address;

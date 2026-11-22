@@ -42,7 +42,6 @@ extern FDCAN_RxHeaderTypeDef  RxHeader;
 extern uint8_t                RxData[64];
 
 /* Public functions */
-uint8_t Read_DIP_Switches(void);
 uint8_t Fetch_Motor_Address(void);
 void    Set_System_State(SystemState_t new_state);
 void    Update_System_LEDs(SystemState_t state);

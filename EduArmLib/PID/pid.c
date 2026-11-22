@@ -1,26 +1,53 @@
+/**
+  ******************************************************************************
+  * @file    pid.c
+  * @author  Samuel_D
+  * @brief   This file contains all the basic functions for PID
+  ******************************************************************************
+  * @attention
+  *
+  * Open-source EduArm
+  *
+  ******************************************************************************
+  */
+
 #include "pid.h"
 
-/* PID init */
+/**
+  * @brief  Initializes a PID controller.
+  * @param  p PID controller instance.
+  * @param  kp Proportional coefficient.
+  * @param  ki Integral coefficient.
+  * @param  kd Derivative coefficient.
+  * @retval None.
+  */
 void PID_Vitesse_Init(PID *p, float kp, float ki, float kd) {
-    p->kp = kp;
-    p->ki = ki;
-    p->kd = kd;
-    p->integrale = 0;
-    p->erreur_precedente = 0;
+  p->kp = kp;
+  p->ki = ki;
+  p->kd = kd;
+  p->integrale = 0;
+  p->erreur_precedente = 0;
 }
 
-/* PID calculation*/
+/**
+  * @brief  Calculates the PID command.
+  * @param  pid PID controller instance.
+  * @param  consigne Target value.
+  * @param  mesure Measured value.
+  * @param  dt Sampling period.
+  * @retval PID command.
+  */
 float calculer_commande_PID(PID*pid, float consigne, float mesure, float dt) {
-    float erreur = consigne - mesure;
+  float erreur = consigne - mesure;
 
-    pid->integrale += erreur * dt;
+  pid->integrale += erreur * dt;
 
-    float max_integrale = 5000.0f;
-    if (pid->integrale > max_integrale)  pid->integrale = max_integrale;
-    if (pid->integrale < -max_integrale) pid->integrale = -max_integrale;
+  float max_integrale = 5000.0f;
+  if (pid->integrale > max_integrale)  pid->integrale = max_integrale;
+  if (pid->integrale < -max_integrale) pid->integrale = -max_integrale;
 
-    float derivee = (erreur - pid->erreur_precedente) / dt;
-    pid->erreur_precedente = erreur;
+  float derivee = (erreur - pid->erreur_precedente) / dt;
+  pid->erreur_precedente = erreur;
 
-    return (pid->kp * erreur) + (pid->ki * pid->integrale) + (pid->kd * derivee);
+  return (pid->kp * erreur) + (pid->ki * pid->integrale) + (pid->kd * derivee);
 }
