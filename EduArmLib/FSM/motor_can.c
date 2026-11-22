@@ -1,6 +1,7 @@
 #include <string.h>
 #include "motor_can.h"
 #include "fdcan.h"
+#include "canfd_protocol.h"
 
 /* Global variable definitions */
 uint32_t              motor_add      = 0;
@@ -32,20 +33,6 @@ uint8_t Fetch_Motor_Address(void) {
         HAL_Delay(10);
     }
     return address;
-}
-
-
-/* CAN RX interrupt callback : decode incoming motor command */
-void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs) {
-    if ((RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE) != 0) {
-        if (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &RxHeader, RxData) == HAL_OK) {
-            if (RxHeader.DataLength == FDCAN_DLC_BYTES_8) {
-                memcpy(&command_received, RxData, sizeof(MotorCommand_t));
-                // Blue LED: blink on CAN reception
-                HAL_GPIO_TogglePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin);
-            }
-        }
-    }
 }
 
 

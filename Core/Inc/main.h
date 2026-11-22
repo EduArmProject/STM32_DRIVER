@@ -59,8 +59,6 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define SPI_CS_Pin GPIO_PIN_1
 #define SPI_CS_GPIO_Port GPIOA
-#define FLASH_CS_Pin GPIO_PIN_2
-#define FLASH_CS_GPIO_Port GPIOA
 #define SPI_CLK_Pin GPIO_PIN_5
 #define SPI_CLK_GPIO_Port GPIOA
 #define SPI_MISO_Pin GPIO_PIN_6
