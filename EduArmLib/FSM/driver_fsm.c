@@ -44,7 +44,7 @@ uint8_t Fetch_Motor_Address(void) {
 void Update_System_LEDs(SystemState_t state) {
     switch (state) {
         case STATE_INIT:
-            break; // Blinking handled by HAL_SYSTICK_Callback
+            // Blinking handled by HAL_SYSTICK_Callback led at ?? Mhz
 
         case STATE_READY:
             // No error : green LED stays ON
@@ -55,6 +55,8 @@ void Update_System_LEDs(SystemState_t state) {
             // Error : green LED OFF
             HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_RESET);
             break;
+
+        // Led blue blink during transmission at diffferent frequence depend of receiving or transmit
 
         default:
             break;
@@ -91,56 +93,106 @@ void Set_System_State(SystemState_t new_state) {
 }
 
 
+int Driver_TMC(void){
+switch (driver_state) {
+        case DRIVER_FIRST_INIT:
+            motor_add = Fetch_Motor_Address();
+            driver_state = DRIVER_INIT_COMM;
+            break;
 
+        case DRIVER_INIT_COMM:
+            FDCAN_Init();
+            driver_state = DRIVER_INIT_ENCODER;
+            break;
 
+        case DRIVER_INIT_ENCODER:
+            AS5047_Init(&encoder, ...);
+            driver_state = DRIVER_INIT_MOTOR;
+            break;
+
+        case DRIVER_INIT_MOTOR:
+            TMC2209_Init(&motor, ...);
+            driver_state = DRIVER_INIT_PID;
+            break;
+
+        case DRIVER_INIT_PID:
+            PID_Vitesse_Init(&pid, kp, ki, kd);
+            driver_state = DRIVER_READY;
+            break;
+
+        case DRIVER_READY:
+            // Send message to the host can at add 0
+            Handle_CAN_Message();
+            break;
+
+        case DRIVER_MOVING:
+            AS5047_Update_MultiTurn(&encoder);
+            Update_Motor_PID();
+            break;
+
+        case DRIVER_HOMING:
+            Perform_Homing();
+            break;
+
+        case DRIVER_ERROR:
+            Handle_Driver_Error();
+            break;
+
+        case DRIVER_SHUTDOWN:
+            Prepare_Shutdown();
+            break;
+    }
+}
 /**
   * @brief  Runs the motor state machine.
   * @retval Execution status.
   */
-int main_motor(void)
+int TMC_FSM(void)
 {
 
-    while (1)
-    {   
+    // START FSM
+    switch(current_state) {
 
-        // START FSM
-        switch(current_state) {
+        case STATE_FIRST_INIT:
 
-                case STATE_FIRST_INIT:
+            Set_First_INIT(); // store in other file that the student can't see 
+            break;
+        case STATE_INIT:
+            
+            Set_System_State(STATE_INIT);
+            Update_System_LEDs(current_state);
 
-                    Set_First_INIT(); // store in other file that the student can't see 
-                    break;
-                case STATE_INIT:
-                    
-                    Set_System_State(STATE_INIT);
-                    Update_System_LEDs(current_state);
+            // ---- START INIT ----
+            motor_add = Fetch_Motor_Address();
 
-                    // ---- START INIT ----
-                    motor_add = Fetch_Motor_Address();
-
-                    FDCAN_Config();
-                    // ---- END INIT ----
+            FDCAN_Init();
+            // ---- END INIT ----
 
 
-                    Set_System_State(STATE_READY);
-                    Update_System_LEDs(current_state);
-                    break;
+            Set_System_State(STATE_READY);
+            Update_System_LEDs(current_state);
+            break;
 
-                case STATE_READY:
-                    break;
+        case STATE_READY:
+            break;
 
-                case STATE_SHUTDOWN :
-                    // clear all param function ..
-                    // can store data in the spi memory if needed
-                    break;
+        case STATE_SHUTDOWN :
+            // clear all param function ..
+            // can store data in the spi memory if needed
+            break;
 
-        }
 
         // END FSM
 
     }
 }
 
+int AS504_fsM(void){
 
+}
+
+int CAN_FSM(void){
+
+}
 
 

@@ -42,7 +42,7 @@ extern volatile uint8_t can_sync_triggered;
   * @note   Must be called after Fetch_Motor_Address() so that motor_add is properly set.
   * @retval None
   */
-void FDCAN_Config(void);
+void FDCAN_Init(void);
 
 /**
   * @brief  Retrieve and process all pending messages from the specified Rx FIFO.

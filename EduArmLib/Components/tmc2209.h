@@ -85,6 +85,7 @@ typedef struct {
     uint16_t           dir_pin;        /**< Direction GPIO pin. */
     TIM_HandleTypeDef* step_timer;     /**< Timer used to generate steps. */
     uint32_t           step_channel;   /**< Timer PWM channel used for steps. */
+    uint32_t           step_freq;      /**< Step frequency in Hz. */
     volatile uint32_t  step_remaining; /**< Remaining steps; updated by interrupts. */
     bool               is_enabled;     /**< Driver enable state. */
     uint8_t            run_current;    /**< Run current setting (0 to 31). */

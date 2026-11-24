@@ -13,10 +13,11 @@
   */
 
 #include "canfd_protocol.h"
-#include "motor_can.h"
 #include <stdio.h>
 #include <string.h>
 #include "fdcan.h"
+
+extern uint32_t motor_add;
 
 /** @defgroup FDCAN_Private_Variables FDCAN Private Variables
   * @{
@@ -75,7 +76,7 @@ static uint8_t FDCAN_DLCToBytes(uint32_t dlc)
   * @brief  Configure FDCAN1 hardware filters, start peripheral and prepare Tx header.
   * @retval None
   */
-void FDCAN_Config(void)
+void FDCAN_Init(void)
 {
     FDCAN_FilterTypeDef sFilterConfig = {0};
 
@@ -293,7 +294,7 @@ void HAL_FDCAN_ErrorStatusCallback(FDCAN_HandleTypeDef *hfdcan, uint32_t ErrorSt
         HAL_FDCAN_Stop(hfdcan);
         if (HAL_FDCAN_Init(hfdcan) == HAL_OK)
         {
-            FDCAN_Config();
+            FDCAN_Init();
         }
         else
         {
@@ -322,7 +323,7 @@ __weak void execute_msg(void)
 {
     if (RxHeaderFifo0.DataLength == FDCAN_DLC_BYTES_8)
     {
-        memcpy(&command_received, RxDataFifo0, sizeof(MotorCommand_t));
+        //memcpy(&command_received, RxDataFifo0, sizeof(MotorCommand_t));
         HAL_GPIO_TogglePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin);
     }
 }

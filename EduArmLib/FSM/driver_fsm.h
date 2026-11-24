@@ -30,15 +30,17 @@ typedef struct __attribute__((packed)) {
 /* System state machine states */
 /** @brief System state machine states. */
 typedef enum {
-    STATE_FIRST_INIT,
-    STATE_INIT,      // Initializing all drivers
-    STATE_READY,     // Waiting for a motor command
-    STATE_MOVING,
-    STATE_ERROR,
-    STATE_DISABLED,
-    STATE_HOMMING,
-    STATE_SHUTDOWN
-} SystemState_t;
+    DRIVER_FIRST_INIT,
+    DRIVER_INIT_COMM,
+    DRIVER_INIT_ENCODER,
+    DRIVER_INIT_MOTOR,
+    DRIVER_INIT_PID,
+    DRIVER_READY,
+    DRIVER_MOVING,
+    DRIVER_HOMING,
+    DRIVER_ERROR,
+    DRIVER_SHUTDOWN
+} DriverState_t;
 
 /* Global variables exposed to other modules */
 /** @brief DIP switch motor address. */

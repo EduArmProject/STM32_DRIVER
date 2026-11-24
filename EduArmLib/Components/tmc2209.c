@@ -383,7 +383,7 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim) {
   * @retval None
   */
 void TMC2209_Set_Speed(TMC2209_t *driver, uint32_t freq_hz) {
-    uint32_t Counter_register_value;
+    uint32_t counter_register_value;
 
     if (freq_hz < TMC2209_STEP_FREQ_MIN) {
         freq_hz = TMC2209_STEP_FREQ_MIN;
