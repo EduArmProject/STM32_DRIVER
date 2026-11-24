@@ -44,6 +44,6 @@ void PID_Vitesse_Init(PID *p, float kp, float ki, float kd);
   * @param  dt Sampling period in seconds.
   * @retval Calculated PID command.
   */
-float calculer_commande_PID(PID *pid, float consigne, float mesure, float dt);
+float PID_Calculer_Commande(PID *pid, float consigne, float mesure, float dt);
 
 #endif
