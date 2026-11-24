@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-  * @file    Board_io
+  * @file    board_io.c
   * @author  Samuel_D / Coretin_k 
   * @brief   This file contains all the basic functions LED / DIP...
   ******************************************************************************

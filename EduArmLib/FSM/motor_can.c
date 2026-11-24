@@ -4,16 +4,28 @@
 #include "canfd_protocol.h"
 #include "board_io.h"
 /* Global variable definitions */
+/** @brief Motor address. */
 uint32_t              motor_add      = 0;
+/** @brief Error detection flag. */
 bool                  error_detected = false;
+/** @brief Current system state. */
 SystemState_t         current_state  = STATE_INIT;
+/** @brief Most recently received motor command. */
 MotorCommand_t        command_received;
+/** @brief FDCAN receive header. */
 FDCAN_RxHeaderTypeDef RxHeader;
+/** @brief FDCAN receive payload. */
 uint8_t               RxData[64];
+/** @brief FDCAN transmit header. */
 FDCAN_TxHeaderTypeDef TxHeader;
+/** @brief FDCAN transmit payload. */
 uint8_t               TxData[8];
 
 
+/**
+  * @brief  Reads the DIP switch address.
+  * @retval Motor address.
+  */
 uint8_t Fetch_Motor_Address(void) {
     uint8_t address;
     while ((address = Read_DIP_Switches()) == 0) {
@@ -24,6 +36,11 @@ uint8_t Fetch_Motor_Address(void) {
 
 
 /* Update status LEDs according to the current system state */
+/**
+  * @brief  Updates the status LEDs according to the current system state.
+  * @param  state System state used to determine LED output.
+  * @retval None.
+  */
 void Update_System_LEDs(SystemState_t state) {
     switch (state) {
         case STATE_INIT:
@@ -47,6 +64,10 @@ void Update_System_LEDs(SystemState_t state) {
 static uint32_t init_led_timer = 0;
 
 /* SysTick callback : blink the green LED every 250 ms during STATE_INIT */
+/**
+  * @brief  Handles the SysTick callback and blinks the green LED during initialization.
+  * @retval None.
+  */
 void HAL_SYSTICK_Callback(void) {
     if (current_state == STATE_INIT) {
         init_led_timer++;
@@ -57,6 +78,11 @@ void HAL_SYSTICK_Callback(void) {
     }
 }
 
+/**
+  * @brief  Changes the current system state.
+  * @param  new_state New system state.
+  * @retval None.
+  */
 void Set_System_State(SystemState_t new_state) {
     if (current_state != new_state) {
         current_state = new_state;
@@ -67,6 +93,10 @@ void Set_System_State(SystemState_t new_state) {
 
 
 
+/**
+  * @brief  Runs the motor state machine.
+  * @retval Execution status.
+  */
 int main_motor(void)
 {
 

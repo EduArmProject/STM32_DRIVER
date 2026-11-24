@@ -215,10 +215,10 @@ void TMC2209_Set_Direction(TMC2209_t *driver, int8_t dir);
 /**
   * @brief  Sets the motor step frequency.
   * @param  driver TMC2209 driver instance.
-  * @param  frequence_impulsion Step frequency in Hz.
+  * @param  freq_hz Step frequency in Hz.
   * @retval None.
   */
-void TMC2209_Set_Speed(TMC2209_t *driver, uint32_t frequence_impulsion);
+void TMC2209_Set_Speed(TMC2209_t *driver, uint32_t freq_hz);
 
 /**
   * @brief  Starts a movement for a given number of steps.

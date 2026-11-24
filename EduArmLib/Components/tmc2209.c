@@ -321,8 +321,6 @@ void TMC2209_Disable(TMC2209_t *driver) {
 void TMC2209_Stop(TMC2209_t *driver) {
     HAL_TIM_PWM_Stop(driver->step_timer, driver->step_channel);
 }
-
-*/
 /**
   * @brief  Sets the motor direction.
   * @param  driver TMC2209 driver instance.
@@ -381,7 +379,7 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim) {
 /**
   * @brief  Sets the motor step frequency.
   * @param  driver TMC2209 driver instance.
-  * @param  frequence_impulsion Step frequency.
+  * @param  freq_hz Step frequency.
   * @retval None
   */
 void TMC2209_Set_Speed(TMC2209_t *driver, uint32_t freq_hz) {
