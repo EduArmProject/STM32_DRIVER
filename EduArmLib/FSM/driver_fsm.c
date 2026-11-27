@@ -48,12 +48,12 @@ void Update_System_LEDs(SystemState_t state) {
 
         case STATE_READY:
             // No error : green LED stays ON
-            HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_SET);
+            //HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_SET);
             break;
 
         case STATE_ERROR:
             // Error : green LED OFF
-            HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_RESET);
+            //HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_RESET);
             break;
 
         // Led blue blink during transmission at diffferent frequence depend of receiving or transmit
@@ -75,7 +75,7 @@ void HAL_SYSTICK_Callback(void) {
         init_led_timer++;
         if (init_led_timer >= 250) {
             init_led_timer = 0;
-            HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
+            //HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
         }
     }
 }

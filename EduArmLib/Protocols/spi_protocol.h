@@ -37,6 +37,11 @@ typedef struct {
 } SPI_Device_t;
 
 /**
+  * @brief Last HAL status returned by SPI_Transmit_16b (for error inspection).
+  */
+extern volatile HAL_StatusTypeDef spi_last_status;
+
+/**
   * @brief  Transmit and receive one 16-bit word over SPI with software CS assertion.
   * @param  device  Pointer to target SPI device configuration structure
   * @param  tx_data 16-bit word to transmit to the slave device

@@ -17,7 +17,7 @@
 #include "stm32g4xx_hal.h"
 #include <stdint.h>
 #include <stdbool.h>
-
+#include "main.h"
 /* Configuration on STM32cubemx
 
 "Connectivity" -> USART

@@ -67,12 +67,12 @@ void Error_Handler(void);
 #define SPI_MOSI_GPIO_Port GPIOA
 #define MOTOR_UART_Pin GPIO_PIN_10
 #define MOTOR_UART_GPIO_Port GPIOB
-#define LED_GREEN_Pin GPIO_PIN_11
-#define LED_GREEN_GPIO_Port GPIOB
+#define LED_BLUE_Pin GPIO_PIN_11
+#define LED_BLUE_GPIO_Port GPIOB
 #define DIP3_Pin GPIO_PIN_12
 #define DIP3_GPIO_Port GPIOB
-#define LED_BLUE_Pin GPIO_PIN_13
-#define LED_BLUE_GPIO_Port GPIOB
+#define LED_GREEN_Pin GPIO_PIN_13
+#define LED_GREEN_GPIO_Port GPIOB
 #define MOTOR_DIAG_Pin GPIO_PIN_14
 #define MOTOR_DIAG_GPIO_Port GPIOB
 #define MOTOR_DIAG_EXTI_IRQn EXTI15_10_IRQn

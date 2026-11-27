@@ -62,7 +62,7 @@ CH Polarity                                      : High
 
 // Register map
 #define TMC2209_REG_GCONF      0x00 // Global configuration
-#define TMC2209_REG_ION        0x06 // Reads the state of all input pins available, we can check if the uart works
+#define TMC2209_REG_IOIN       0x06 // Reads the state of all input pins and the version
 #define TMC2209_REG_IHOLD_IRUN 0x10 // Driver current control (IHOLD / IRUN / IHOLDDELAY)
 #define TMC2209_REG_TPOWERDOWN 0x11 // Powerdown delay (reset default = 20)
 #define TMC2209_REG_CHOPCONF   0x6C // Chopper and driver configuration
@@ -71,6 +71,26 @@ CH Polarity                                      : High
 #define TMC2209_TIMER_TICK_HZ   1000000
 #define TMC2209_STEP_FREQ_MIN   16  
 #define TMC2209_STEP_FREQ_MAX   30000
+
+/* Enum values are also the repeated blue LED pulse counts. */
+typedef enum {
+    TMC2209_ERROR_NONE = 0,
+    TMC2209_ERROR_TX_GCONF = 1,
+    TMC2209_ERROR_TX_CHOPCONF = 2,
+    TMC2209_ERROR_TX_IHOLD_IRUN = 3,
+    TMC2209_ERROR_TX_TPOWERDOWN = 4,
+    TMC2209_ERROR_TX_READ_GCONF = 5,
+    TMC2209_ERROR_RX_READ_GCONF = 6,
+    TMC2209_ERROR_GCONF_MISMATCH = 7,
+    TMC2209_ERROR_TX_READ_CHOPCONF = 8,
+    TMC2209_ERROR_RX_READ_CHOPCONF = 9,
+    TMC2209_ERROR_CHOPCONF_MISMATCH = 10,
+    TMC2209_ERROR_TX_READ_IOIN = 11,
+    TMC2209_ERROR_RX_READ_IOIN = 12,
+    TMC2209_ERROR_IOIN_VERSION = 13,
+    TMC2209_ERROR_TX_READ_REGISTER = 14,
+    TMC2209_ERROR_RX_READ_REGISTER = 15
+} TMC2209_ErrorCode_t;
 
 
 /**
@@ -90,6 +110,13 @@ typedef struct {
     bool               is_enabled;     /**< Driver enable state. */
     uint8_t            run_current;    /**< Run current setting (0 to 31). */
     uint8_t            hold_current;   /**< Hold current setting (0 to 31). */
+    uint32_t           debug_ioin_value;     /**< Last IOIN value read over UART. */
+    uint32_t           debug_gconf_value;    /**< GCONF value read back after configuration. */
+    uint32_t           debug_chopconf_value; /**< CHOPCONF value read back after configuration. */
+    bool               debug_ioin_valid;     /**< Last IOIN frame passed header and CRC checks. */
+    bool               debug_gconf_valid;    /**< GCONF readback matched the requested value. */
+    bool               debug_chopconf_valid; /**< CHOPCONF readback matched the requested value. */
+    TMC2209_ErrorCode_t debug_error_code;    /**< Last TMC2209 initialization or UART error. */
     bool               error_flag;     /**< General driver error flag. */
     bool               overtemp_warning; /**< Overtemperature warning flag. */
 } TMC2209_t;
@@ -100,16 +127,16 @@ static TMC2209_t *tmc2209_driver = NULL;
   * @brief  Initializes a TMC2209 driver instance.
   * @param  driver TMC2209 driver instance.
   * @param  huart UART handle used for TMC2209 communication.
-  * @param  address UART node address.
   * @param  enn_port Enable GPIO port.
   * @param  enn_pin Enable GPIO pin.
   * @param  dir_port Direction GPIO port.
   * @param  dir_pin Direction GPIO pin.
   * @param  step_timer Timer handle used to generate motor steps.
   * @param  step_channel Timer PWM channel used to generate motor steps.
-  * @retval None.
+  * @retval true Initialization and configuration succeeded.
+  * @retval false Invalid address or UART transmission failed.
   */
-void TMC2209_Init(TMC2209_t *driver, UART_HandleTypeDef *huart, uint8_t address,
+bool TMC2209_Init(TMC2209_t *driver, UART_HandleTypeDef *huart,
                   GPIO_TypeDef *enn_port, uint16_t enn_pin,
                   GPIO_TypeDef *dir_port, uint16_t dir_pin,
                   TIM_HandleTypeDef *step_timer, uint32_t step_channel);
@@ -155,34 +182,39 @@ bool TMC2209_Is_Mooving(TMC2209_t *driver);
   * @param  driver TMC2209 driver instance.
   * @param  reg Register address.
   * @param  value Register value.
-  * @retval None.
+  * @retval true Transmission succeeded.
+  * @retval false Transmission failed.
   */
-void TMC2209_WriteRegister(TMC2209_t *driver, uint8_t reg, uint32_t value);
+bool TMC2209_WriteRegister(TMC2209_t *driver, uint8_t reg, uint32_t value);
 
 /**
   * @brief  Sends a register read request over UART.
   * @param  driver TMC2209 driver instance.
   * @param  reg Register address.
-  * @retval None.
+  * @retval true Transmission succeeded.
+  * @retval false Transmission failed.
   */
-void TMC2209_ReadRegister_Request(TMC2209_t *driver, uint8_t reg);
+bool TMC2209_ReadRegister_Request(TMC2209_t *driver, uint8_t reg);
 
 /**
   * @brief  Receives a register reply and extracts its 32-bit value.
   * @param  driver TMC2209 driver instance.
+  * @param  reg Register address expected in the reply.
   * @param  value Buffer receiving four bytes of register data.
-  * @retval None.
+  * @retval true Reply header and CRC are valid.
+  * @retval false Reception failed or reply is invalid.
   */
-void TMC2209_ReadRegister_Reply(TMC2209_t *driver, uint8_t value[4]);
+bool TMC2209_ReadRegister_Reply(TMC2209_t *driver, uint8_t reg, uint8_t value[4]);
 
 /**
   * @brief  Requests and receives a TMC2209 register value.
   * @param  driver TMC2209 driver instance.
   * @param  reg Register address.
   * @param  value Buffer receiving four bytes of register data.
-  * @retval None.
+  * @retval true Read succeeded.
+  * @retval false Request or reply failed.
   */
-void TMC2209_ReadRegister(TMC2209_t *driver, uint8_t reg, uint8_t value[4]);
+bool TMC2209_ReadRegister(TMC2209_t *driver, uint8_t reg, uint8_t value[4]);
 
 /**
   * @brief  Enables the motor driver.

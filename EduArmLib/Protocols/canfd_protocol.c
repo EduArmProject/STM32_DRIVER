@@ -274,7 +274,7 @@ void HAL_FDCAN_RxFifo1Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo1ITs)
     if ((RxFifo1ITs & FDCAN_IT_RX_FIFO1_NEW_MESSAGE) != 0U)
     {
         FDCAN_Receive_Msg(FDCAN_RX_FIFO1);
-        HAL_GPIO_TogglePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin);
+        //HAL_GPIO_TogglePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin);
     }
 }
 
@@ -324,7 +324,7 @@ __weak void execute_msg(void)
     if (RxHeaderFifo0.DataLength == FDCAN_DLC_BYTES_8)
     {
         //memcpy(&command_received, RxDataFifo0, sizeof(MotorCommand_t));
-        HAL_GPIO_TogglePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin);
+        //HAL_GPIO_TogglePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin);
     }
 }
 

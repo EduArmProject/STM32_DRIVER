@@ -23,10 +23,14 @@
   * @retval HAL status.
   */
 HAL_StatusTypeDef UART_HD_Transmit(UART_Device_t *device, uint8_t *tx_data, uint16_t Size) {
-    HAL_HalfDuplex_EnableTransmitter(device->huart);
-    HAL_StatusTypeDef status = HAL_UART_Transmit(device->huart, tx_data, Size, 10);
-    HAL_HalfDuplex_EnableReceiver(device->huart);
-    return status;
+    HAL_StatusTypeDef status = HAL_HalfDuplex_EnableTransmitter(device->huart);
+    if (status != HAL_OK) {
+        return status;
+    }
+
+    status = HAL_UART_Transmit(device->huart, tx_data, Size, 10);
+    HAL_StatusTypeDef receiver_status = HAL_HalfDuplex_EnableReceiver(device->huart);
+    return (status == HAL_OK) ? receiver_status : status;
 }
 
 /**

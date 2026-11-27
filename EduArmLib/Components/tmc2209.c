@@ -62,10 +62,11 @@ static uint8_t TMC2209_CRC8(uint8_t *data, uint8_t len) {
   * @param  driver TMC2209 driver instance.
   * @param  reg Register address.
   * @param  value Register value.
-  * @retval None
+  * @retval true Transmission succeeded.
+  * @retval false Transmission failed.
 
   */
-void TMC2209_WriteRegister(TMC2209_t *driver, uint8_t reg, uint32_t value) {
+bool TMC2209_WriteRegister(TMC2209_t *driver, uint8_t reg, uint32_t value) {
     uint8_t datagram[8];
     datagram[0] = 0x05;                       // Sync byte
     datagram[1] = driver->node_address;        // Node address (0 to 3)
@@ -76,49 +77,81 @@ void TMC2209_WriteRegister(TMC2209_t *driver, uint8_t reg, uint32_t value) {
     datagram[6] = (value >>  0) & 0xFF;       // LSB
     datagram[7] = TMC2209_CRC8(datagram, 7);  // CRC over first 7 bytes
 
-    UART_HD_Transmit(&driver->uart_interface, datagram, 8);
+    return UART_HD_Transmit(&driver->uart_interface, datagram, sizeof(datagram)) == HAL_OK;
 }
 
 /**
   * @brief  Requests a register read from the TMC2209.
   * @param  driver TMC2209 driver instance.
   * @param  reg Register address.
-  * @retval None
+  * @retval true Transmission succeeded.
+  * @retval false Transmission failed.
   */
-void TMC2209_ReadRegister_Request(TMC2209_t *driver, uint8_t reg) {
+bool TMC2209_ReadRegister_Request(TMC2209_t *driver, uint8_t reg) {
     uint8_t datagram[4];
     datagram[0] = 0x05;
     datagram[1] = driver->node_address;
     datagram[2] = reg & 0x7F;                 // Register address + read bit
     datagram[3] = TMC2209_CRC8(datagram, 3);
 
-    HAL_StatusTypeDef status = UART_HD_Transmit(&driver->uart_interface, datagram, sizeof(datagram));
-    if (status != HAL_OK) {
-        return;
-    }
+    return UART_HD_Transmit(&driver->uart_interface, datagram, sizeof(datagram)) == HAL_OK;
 }
 
 /**
   * @brief  Receives a TMC2209 register reply.
   * @param  driver TMC2209 driver instance.
   * @param  value Buffer receiving the register value.
-  * @retval None
+  * @retval true Reply header and CRC are valid.
+  * @retval false Reception failed or reply is invalid.
   */
-void TMC2209_ReadRegister_Reply(TMC2209_t *driver, uint8_t value[4]) {
+bool TMC2209_ReadRegister_Reply(TMC2209_t *driver, uint8_t reg, uint8_t value[4]) {
     uint8_t reply[8];
-    HAL_StatusTypeDef status = UART_HD_Receive(&driver->uart_interface, reply, sizeof(reply), 10);
-    if (status != HAL_OK) {
-    	return;
+    uint8_t byte;
+    uint8_t header_index = 0;
+    uint32_t start = HAL_GetTick();
+
+    while ((uint32_t)(HAL_GetTick() - start) < 10U) {
+        uint32_t elapsed = HAL_GetTick() - start;
+        uint32_t remaining = 10U - elapsed;
+
+        if (UART_HD_Receive(&driver->uart_interface, &byte, 1, remaining) != HAL_OK) {
+            return false;
+        }
+
+        if (header_index == 0U) {
+            header_index = (byte == 0x05U) ? 1U : 0U;
+        } else if (header_index == 1U) {
+            header_index = (byte == 0xFFU) ? 2U : ((byte == 0x05U) ? 1U : 0U);
+        } else if (byte == reg) {
+            reply[0] = 0x05U;
+            reply[1] = 0xFFU;
+            reply[2] = reg;
+            header_index = 3U;
+            break;
+        } else {
+            header_index = (byte == 0x05U) ? 1U : 0U;
+        }
+    }
+
+    if (header_index != 3U) {
+        return false;
+    }
+
+    uint32_t elapsed = HAL_GetTick() - start;
+    if (elapsed >= 10U ||
+        UART_HD_Receive(&driver->uart_interface, &reply[3], 5, 10U - elapsed) != HAL_OK) {
+        return false;
     }
 
     if (reply[7] != TMC2209_CRC8(reply, 7)) {
-    	return;
+        return false;
     }
 
     value[0] = reply[3];
     value[1] = reply[4];
     value[2] = reply[5];
     value[3] = reply[6];
+    return true;
 }
 
 
@@ -127,14 +160,56 @@ void TMC2209_ReadRegister_Reply(TMC2209_t *driver, uint8_t value[4]) {
   * @param  driver TMC2209 driver instance.
   * @param  reg Register address.
   * @param  value Buffer receiving the register value.
-  * @retval None
+  * @retval true Read succeeded.
+  * @retval false Request or reply failed.
   */
-void TMC2209_ReadRegister(TMC2209_t *driver, uint8_t reg, uint8_t value[4]) {
+bool TMC2209_ReadRegister(TMC2209_t *driver, uint8_t reg, uint8_t value[4]) {
+    if (!TMC2209_ReadRegister_Request(driver, reg)) {
+        switch (reg) {
+            case TMC2209_REG_GCONF:
+                driver->debug_error_code = TMC2209_ERROR_TX_READ_GCONF;
+                break;
+            case TMC2209_REG_CHOPCONF:
+                driver->debug_error_code = TMC2209_ERROR_TX_READ_CHOPCONF;
+                break;
+            case TMC2209_REG_IOIN:
+                driver->debug_error_code = TMC2209_ERROR_TX_READ_IOIN;
+                break;
+            default:
+                driver->debug_error_code = TMC2209_ERROR_TX_READ_REGISTER;
+                break;
+        }
+        return false;
+    }
 
-    TMC2209_ReadRegister_Request(driver, reg);
+    if (!TMC2209_ReadRegister_Reply(driver, reg, value)) {
+        switch (reg) {
+            case TMC2209_REG_GCONF:
+                driver->debug_error_code = TMC2209_ERROR_RX_READ_GCONF;
+                break;
+            case TMC2209_REG_CHOPCONF:
+                driver->debug_error_code = TMC2209_ERROR_RX_READ_CHOPCONF;
+                break;
+            case TMC2209_REG_IOIN:
+                driver->debug_error_code = TMC2209_ERROR_RX_READ_IOIN;
+                break;
+            default:
+                driver->debug_error_code = TMC2209_ERROR_RX_READ_REGISTER;
+                break;
+        }
+        return false;
+    }
 
-    TMC2209_ReadRegister_Reply(driver, value);
+    return true;
 }
+
+static uint32_t TMC2209_BytesToValue(const uint8_t bytes[4]) {
+    return ((uint32_t)bytes[0] << 24) |
+           ((uint32_t)bytes[1] << 16) |
+           ((uint32_t)bytes[2] << 8) |
+           (uint32_t)bytes[3];
+}
+
 
 /**
   * @brief  Checks the TMC2209 UART connection.
@@ -144,11 +219,19 @@ void TMC2209_ReadRegister(TMC2209_t *driver, uint8_t reg, uint8_t value[4]) {
   */
 bool TMC2209_Check_UART(TMC2209_t *driver) {
     uint8_t value[4];
-    TMC2209_ReadRegister(driver, TMC2209_REG_ION, value);
+    driver->debug_error_code = TMC2209_ERROR_NONE;
+    driver->debug_ioin_valid = TMC2209_ReadRegister(driver, TMC2209_REG_IOIN, value);
+    if (!driver->debug_ioin_valid) {
+        return false;
+    }
 
-    if (value[0] == 0x21) // Version must be equal to 0x21, so we can check uart
-        return true;
-    return false;
+    driver->debug_ioin_value = TMC2209_BytesToValue(value);
+    if (value[0] != 0x21U) {
+        driver->debug_error_code = TMC2209_ERROR_IOIN_VERSION;
+        return false;
+    }
+
+    return true;
 }
 
 /**
@@ -170,6 +253,12 @@ bool TMC2209_Configure(
     uint8_t run_current,  // 0...31 (0=1/32 ... 31=32/32)
     uint8_t hold_current  // 0...31 (0=1/32 ... 31=32/32)
 ) {
+    driver->debug_gconf_value = 0U;
+    driver->debug_chopconf_value = 0U;
+    driver->debug_gconf_valid = false;
+    driver->debug_chopconf_valid = false;
+    driver->debug_error_code = TMC2209_ERROR_NONE;
+
     // --- Global configuration (GCONF) ---
     uint32_t gconf_value = 0;
 
@@ -188,10 +277,13 @@ bool TMC2209_Configure(
     // Bit 7: 1 = Microstep resolution from MRES register (ignores MS1/MS2 pins)
     gconf_value |= (1 << 7);
 
-    // Bit 8: 1 = Software pulse generator optimization enabled
+    // Bit 8: 1 = Multi-step filtering enabled
     gconf_value |= (1 << 8);
 
-    TMC2209_WriteRegister(driver, TMC2209_REG_GCONF, gconf_value);
+    if (!TMC2209_WriteRegister(driver, TMC2209_REG_GCONF, gconf_value)) {
+        driver->debug_error_code = TMC2209_ERROR_TX_GCONF;
+        return false;
+    }
     HAL_Delay(2);
 
 
@@ -207,7 +299,10 @@ bool TMC2209_Configure(
     chopconf_value &= ~((uint32_t)0xF << 24);
     chopconf_value |= ((uint32_t)mres  << 24);
 
-    TMC2209_WriteRegister(driver, TMC2209_REG_CHOPCONF, chopconf_value);
+    if (!TMC2209_WriteRegister(driver, TMC2209_REG_CHOPCONF, chopconf_value)) {
+        driver->debug_error_code = TMC2209_ERROR_TX_CHOPCONF;
+        return false;
+    }
     HAL_Delay(2);
 
 
@@ -224,13 +319,44 @@ bool TMC2209_Configure(
     // Bits 19..16: IHOLDDELAY — ramp-down delay steps after standstill
     current_value |= (7 << 16); // mid value
 
-    TMC2209_WriteRegister(driver, TMC2209_REG_IHOLD_IRUN, current_value);
+    if (!TMC2209_WriteRegister(driver, TMC2209_REG_IHOLD_IRUN, current_value)) {
+        driver->debug_error_code = TMC2209_ERROR_TX_IHOLD_IRUN;
+        return false;
+    }
     HAL_Delay(2);
 
 
     // --- Power-down delay (TPOWERDOWN) ---
-    TMC2209_WriteRegister(driver, TMC2209_REG_TPOWERDOWN, 20);
+    if (!TMC2209_WriteRegister(driver, TMC2209_REG_TPOWERDOWN, 20)) {
+        driver->debug_error_code = TMC2209_ERROR_TX_TPOWERDOWN;
+        return false;
+    }
     HAL_Delay(2);
+
+    uint8_t readback[4];
+    bool gconf_read_ok = TMC2209_ReadRegister(driver, TMC2209_REG_GCONF, readback);
+    driver->debug_gconf_valid = gconf_read_ok;
+    if (!gconf_read_ok) {
+        return false;
+    }
+    driver->debug_gconf_value = TMC2209_BytesToValue(readback);
+    driver->debug_gconf_valid = (driver->debug_gconf_value == gconf_value);
+    if (!driver->debug_gconf_valid) {
+        driver->debug_error_code = TMC2209_ERROR_GCONF_MISMATCH;
+        return false;
+    }
+
+    bool chopconf_read_ok = TMC2209_ReadRegister(driver, TMC2209_REG_CHOPCONF, readback);
+    driver->debug_chopconf_valid = chopconf_read_ok;
+    if (!chopconf_read_ok) {
+        return false;
+    }
+    driver->debug_chopconf_value = TMC2209_BytesToValue(readback);
+    driver->debug_chopconf_valid = (driver->debug_chopconf_value == chopconf_value);
+    if (!driver->debug_chopconf_valid) {
+        driver->debug_error_code = TMC2209_ERROR_CHOPCONF_MISMATCH;
+        return false;
+    }
 
     driver->run_current  = run_current;
     driver->hold_current = hold_current;
@@ -242,19 +368,18 @@ bool TMC2209_Configure(
   * @brief  Initializes a TMC2209 driver.
   * @param  driver TMC2209 driver instance.
   * @param  huart UART handle.
-  * @param  address Driver UART address.
   * @param  enn_port Enable GPIO port.
   * @param  enn_pin Enable GPIO pin.
   * @param  dir_port Direction GPIO port.
   * @param  dir_pin Direction GPIO pin.
   * @param  step_timer Step timer handle.
   * @param  step_channel Step timer channel.
-  * @retval None
+  * @retval true Initialization and configuration succeeded.
+  * @retval false Invalid address or UART transmission failed.
   */
-void TMC2209_Init(
+bool TMC2209_Init(
     TMC2209_t *driver,
     UART_HandleTypeDef *huart,
-    uint8_t address,
     GPIO_TypeDef *enn_port,
     uint16_t enn_pin,
     GPIO_TypeDef *dir_port,
@@ -262,8 +387,9 @@ void TMC2209_Init(
     TIM_HandleTypeDef *step_timer,
     uint32_t step_channel
 ) {
+
     driver->uart_interface.huart = huart;
-    driver->node_address         = address;
+    driver->node_address         = 0U; // MS1 and MS2 are tied to GND
 
     // EN and Direction GPIOs
     driver->enn_port = enn_port;
@@ -279,15 +405,22 @@ void TMC2209_Init(
     driver->is_enabled       = false;
     driver->error_flag       = false;
     driver->overtemp_warning = false;
+    driver->debug_ioin_value = 0U;
+    driver->debug_gconf_value = 0U;
+    driver->debug_chopconf_value = 0U;
+    driver->debug_ioin_valid = false;
+    driver->debug_gconf_valid = false;
+    driver->debug_chopconf_valid = false;
+    driver->debug_error_code = TMC2209_ERROR_NONE;
 
     // Keep motor disabled at startup (EN active low, pulled high = disabled)
     HAL_GPIO_WritePin(driver->enn_port, driver->enn_pin, GPIO_PIN_SET);
 
     bool status = TMC2209_Configure(driver, false, true, false, 16, 8);
     if (!status)
-        return;
-        
+        return false;
     tmc2209_driver = driver;
+    return true;
 }
 
 /**

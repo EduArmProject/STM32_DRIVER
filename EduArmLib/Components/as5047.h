@@ -48,16 +48,18 @@ Data is protected by parity"
 #define AS5047P_REG_ANGLECOM   0x3FFFU /*!< Measured angle with dynamic angle error compensation */
 
 /* --- SPI Commands Precalculated (Bit 15: Parity Even, Bit 14: Read=1) --- */
-#define AS5047P_CMD_READ_ANGLE 0xFFFFU /*!< Parity(1) + Read(1) + 0x3FFF */
-#define AS5047P_CMD_READ_DIAG  0xFFFCU /*!< Parity(1) + Read(1) + 0x3FFC */
-#define AS5047P_CMD_READ_MAG   0xFFFDU /*!< Parity(1) + Read(1) + 0x3FFD */
-#define AS5047P_CMD_READ_NOP   0xC000U /*!< Parity(1) + Read(1) + 0x0000 */
-#define AS5047P_CMD_CLEAR_ERR  0x4001U /*!< Parity(0) + Read(1) + 0x0001 */
+#define AS5047P_CMD_READ_ANGLE    0xFFFFU /*!< Parity(1) + Read(1) + 0x3FFF (ANGLECOM) */
+#define AS5047P_CMD_READ_ANGLEUNC 0x7FFEU /*!< Parity(0) + Read(1) + 0x3FFE (ANGLEUNC) */
+#define AS5047P_CMD_READ_DIAG     0xFFFCU /*!< Parity(1) + Read(1) + 0x3FFC (DIAAGC) */
+#define AS5047P_CMD_READ_MAG      0x7FFDU /*!< Parity(0) + Read(1) + 0x3FFD (MAG) */
+#define AS5047P_CMD_READ_NOP      0xC000U /*!< Parity(1) + Read(1) + 0x0000 (NOP) */
+#define AS5047P_CMD_CLEAR_ERR     0x4001U /*!< Parity(0) + Read(1) + 0x0001 (ERRFL) */
+
 
 /**
   * @brief Precalculated factor to convert raw 14-bit count to degrees (360.0f / 16384.0f)
   */
-#define AS5047_RAW_TO_DEG      0.02197265625f
+#define AS5047_RAW_TO_DEG   0.02197265625f
 
 /**
   * @brief AS5047P Sensor Handle Structure
@@ -85,8 +87,11 @@ typedef struct {
     uint8_t   agc_value;            /*!< Automatic Gain Control value (0 - 255) */
     bool      mag_too_high;         /*!< True if magnet is too close (MAGH bit) */
     bool      mag_too_low;          /*!< True if magnet is too far (MAGL bit) */
+    bool      cordic_overflow;      /*!< True if CORDIC overflow occurred (COF bit) */
+    bool      offset_comp_ok;       /*!< True if internal offset compensation is ready (LF bit) */
     bool      error_flag;           /*!< True if SPI frame transmission error detected */
-    uint16_t  error;                /*!< Detailed error register content (ERRFL) */
+    uint16_t  error;                /*!< Detailed error register content (ERRFL bits 2:0) */
+    uint16_t  last_rx_frame;        /*!< Raw 16-bit SPI word from last register read */
     bool      multiturn_initialized; /*!< True after the first valid angle read */
 } AS5047_t;
 
